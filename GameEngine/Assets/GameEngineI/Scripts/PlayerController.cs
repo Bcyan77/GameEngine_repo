@@ -10,7 +10,6 @@ public class PlayerController : MonoBehaviour
     
     private Rigidbody2D rb;
     private bool isGrounded = false;
-    private int score = 0;
     private Vector3 startPosition;
     
     void Start()
@@ -44,21 +43,25 @@ public class PlayerController : MonoBehaviour
         if (collision.gameObject.CompareTag("Ground"))
         {
             isGrounded = true;
-            Debug.Log("isGrounded: " + isGrounded);
         }
-
+        // 장애물 충돌 시 생명 감소로 변경!
         if (collision.gameObject.CompareTag("Obstacle"))
         {
-            Debug.Log("⚠️ 장애물 충돌! 시작 지점으로 돌아갑니다.");
+            Debug.Log("⚠️ 장애물 충돌! 생명 -1");
+            // GameManager 찾아서 생명 감소
+            GameManager gameManager = FindObjectOfType<GameManager>();
             
-            // 시작 위치로 순간이동
+            if (gameManager != null)
+            {
+                gameManager.TakeDamage(1);  // 생명 1 감소
+            }
+            
+            // 짧은 무적 시간 (0.5초 후 원래 위치로)
             transform.position = startPosition;
-            
-            // 속도 초기화 (안 하면 계속 날아감)
-            rb.velocity = new Vector2(0,0);
+            rb.velocity = Vector2.zero;
         }
     }
-    
+
     void OnCollisionExit2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Ground"))
@@ -67,24 +70,18 @@ public class PlayerController : MonoBehaviour
             Debug.Log("isGrounded: " + isGrounded);
         }
     }
-
-    // 아이템 수집 감지 (Trigger)
+    
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (other.CompareTag("Coin"))
-        {
-            score++;  // 점수 증가
-            Debug.Log("코인 획득! 현재 점수: " + score);
-            Destroy(other.gameObject);  // 코인 제거
-        }
-
+        // 골 도달 - 새로 추가!
         if (other.CompareTag("Goal"))
         {
-            Debug.Log("🎉🎉🎉 게임 클리어! 🎉🎉🎉");
-            Debug.Log("최종 점수: " + score + "점");
-            
-            // 캐릭터 조작 비활성화
-            enabled = false;
+            Debug.Log("🎉 Goal Reached!");
+            GameManager gameManager = FindObjectOfType<GameManager>();
+            if (gameManager != null)
+            {
+                gameManager.GameClear();  // 게임 클리어 함수 호출
+            }
         }
     }
 }
