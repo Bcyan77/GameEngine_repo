@@ -1,12 +1,17 @@
 using UnityEngine;
+using Unity.Cinemachine;
 
 public class PlayerController : MonoBehaviour
 {
     [Header("이동 설정")]
     public float moveSpeed = 5.0f;
-    
+
     [Header("점프 설정")]
     public float jumpForce = 10.0f;
+
+    [Header("카메라 흔들림")]
+    private CinemachineImpulseSource impulseSource;
+    private bool wasInAir = false;
     
     private Rigidbody2D rb;
     private bool isGrounded = false;
@@ -15,6 +20,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        impulseSource = GetComponent<CinemachineImpulseSource>();
         
         // 게임 시작 시 위치를 저장 - 새로 추가!
         startPosition = transform.position;
@@ -29,12 +35,14 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKey(KeyCode.D)) moveX = 1f;
         
         rb.velocity = new Vector2(moveX * moveSpeed, rb.velocity.y);
-        
+
         // 점프 (지난 시간에 배운 내용)
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             rb.velocity = new Vector2(rb.velocity.x, jumpForce);
         }
+        
+        CheckLanding();
     }
     
     // 바닥 충돌 감지 (Collision)
@@ -70,7 +78,7 @@ public class PlayerController : MonoBehaviour
             Debug.Log("isGrounded: " + isGrounded);
         }
     }
-    
+
     void OnTriggerEnter2D(Collider2D other)
     {
         // 골 도달 - 새로 추가!
@@ -83,5 +91,24 @@ public class PlayerController : MonoBehaviour
                 gameManager.GameClear();  // 게임 클리어 함수 호출
             }
         }
+    }
+
+    void CheckLanding()
+    {
+        if (isGrounded)
+        {
+            if (wasInAir)
+            {
+                // 착지 시 카메라 흔들림 발생
+                if (impulseSource != null)
+                {
+                    impulseSource.GenerateImpulse();
+                    Debug.Log("카메라 흔들림 발생!");
+                }
+                wasInAir = false;
+            }
+        }
+        else
+            wasInAir = true;
     }
 }
